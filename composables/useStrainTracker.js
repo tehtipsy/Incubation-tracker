@@ -22,13 +22,13 @@ export const useStrainTracker = () => {
 
     for (let index = 0; index < safeQuantity; index += 1) {
       const batch = createBatch({ ...strain, batches: currentBatches }, new Date(), blockCount)
-      createdBatches.push(batch)
+      createdBatches.unshift(batch)
       currentBatches = [...currentBatches, batch]
     }
 
     strains.value = strains.value.map((currentStrain, index) =>
       index === strainIndex
-        ? { ...currentStrain, batches: [...[...createdBatches].reverse(), ...currentStrain.batches] }
+        ? { ...currentStrain, batches: [...createdBatches, ...currentStrain.batches] }
         : currentStrain
     )
 
@@ -51,6 +51,11 @@ export const useStrainTracker = () => {
 
     const batch = strain.batches[batchIndex]
     const updatedBatch = moveBlocksToFruiting(batch, blocksToMove)
+
+    if (typeof updatedBatch === 'undefined') {
+      return null
+    }
+
     const updatedBatches = [...strain.batches]
 
     if (!updatedBatch) {

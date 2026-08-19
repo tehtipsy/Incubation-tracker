@@ -82,7 +82,7 @@ const moveToFruiting = (batch) => {
           >
         </label>
         <label class="input-group input-group--compact" for="batchCount">
-          <span>How many batches</span>
+          <span>Number of batches</span>
           <input
             id="batchCount"
             v-model="draftBatchCount"

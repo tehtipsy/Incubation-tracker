@@ -104,7 +104,7 @@ export const moveBlocksToFruiting = (batch, blocksToMove) => {
   const normalizedBlocksToMove = toPositiveInteger(blocksToMove)
 
   if (!normalizedBlocksToMove || normalizedBlocksToMove > batch.blockCount) {
-    return null
+    return undefined
   }
 
   const remainingBlocks = batch.blockCount - normalizedBlocksToMove

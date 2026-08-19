@@ -49,10 +49,14 @@ test('moving blocks to fruiting decreases block count or closes the batch', () =
   const reducedBatch = moveBlocksToFruiting(batch, 2)
   const closedBatch = moveBlocksToFruiting(batch, 5)
   const invalidMove = moveBlocksToFruiting(batch, 7)
+  const zeroMove = moveBlocksToFruiting(batch, 0)
+  const negativeMove = moveBlocksToFruiting(batch, -1)
 
   assert.deepEqual(reducedBatch, { ...batch, blockCount: 3 })
   assert.equal(closedBatch, null)
-  assert.equal(invalidMove, null)
+  assert.strictEqual(invalidMove, undefined)
+  assert.strictEqual(zeroMove, undefined)
+  assert.strictEqual(negativeMove, undefined)
 })
 
 test('creating a batch requires a positive block count', () => {
