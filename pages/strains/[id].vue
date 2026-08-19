@@ -1,7 +1,8 @@
 <script setup>
 const route = useRoute()
-const draftLabel = ref('')
-const { getStrainById, addBatchToStrain, getProgress } = useStrainTracker()
+const draftBlockCount = ref('')
+const draftBatchCount = ref(1)
+const { getStrainById, addBatchesToStrain, moveBatchBlocksToFruiting, getProgress } = useStrainTracker()
 
 const strain = computed(() => getStrainById(route.params.id))
 
@@ -10,8 +11,44 @@ const addBatch = () => {
     return
   }
 
-  addBatchToStrain(strain.value.id, draftLabel.value)
-  draftLabel.value = ''
+  try {
+    addBatchesToStrain(strain.value.id, draftBlockCount.value, draftBatchCount.value)
+    draftBlockCount.value = ''
+    draftBatchCount.value = 1
+  } catch {
+    if (import.meta.client) {
+      window.alert('Block count must be a positive whole number.')
+    }
+  }
+}
+
+const moveToFruiting = (batch) => {
+  if (!strain.value || !import.meta.client) {
+    return
+  }
+
+  const promptValue = window.prompt(
+    `How many blocks should be moved to fruiting from ${batch.label}?`,
+    `${batch.blockCount}`
+  )
+
+  if (promptValue === null) {
+    return
+  }
+
+  const blocksToMove = Number.parseInt(promptValue, 10)
+
+  if (!Number.isInteger(blocksToMove) || blocksToMove <= 0) {
+    window.alert('Enter a positive whole number.')
+    return
+  }
+
+  if (blocksToMove > batch.blockCount) {
+    window.alert(`Only ${batch.blockCount} blocks remain in this batch.`)
+    return
+  }
+
+  moveBatchBlocksToFruiting(strain.value.id, batch.id, blocksToMove)
 }
 </script>
 
@@ -33,17 +70,29 @@ const addBatch = () => {
       </header>
 
       <section class="controls">
-        <label class="input-group" for="batchLabel">
-          <span>Batch label</span>
+        <label class="input-group" for="blockCount">
+          <span>Blocks per batch</span>
           <input
-            id="batchLabel"
-            v-model="draftLabel"
-            type="text"
-            placeholder="Example: Tray 4"
+            id="blockCount"
+            v-model="draftBlockCount"
+            type="number"
+            min="1"
+            inputmode="numeric"
+            placeholder="Example: 6"
+          >
+        </label>
+        <label class="input-group input-group--compact" for="batchCount">
+          <span>How many batches</span>
+          <input
+            id="batchCount"
+            v-model="draftBatchCount"
+            type="number"
+            min="1"
+            inputmode="numeric"
           >
         </label>
         <button type="button" class="add-button" @click="addBatch">
-          Add batch to tracker
+          Add to tracker
         </button>
       </section>
 
@@ -53,6 +102,7 @@ const addBatch = () => {
           :key="batch.id"
           :batch="batch"
           :progress="getProgress(batch, strain)"
+          @move-to-fruiting="moveToFruiting"
         />
       </section>
     </section>
@@ -137,6 +187,10 @@ h1 {
   display: grid;
   gap: 0.4rem;
   flex: 1;
+}
+
+.input-group--compact {
+  max-width: 180px;
 }
 
 .input-group input {
