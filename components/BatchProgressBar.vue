@@ -10,6 +10,7 @@ const props = defineProps({
   }
 })
 
+const emit = defineEmits(['move-to-fruiting'])
 const progressWidth = computed(() => `${props.progress.percent}%`)
 </script>
 
@@ -46,6 +47,13 @@ const progressWidth = computed(() => `${props.progress.percent}%`)
       <span v-else>Colonizing</span>
       <span v-if="progress.stage !== 'harvest'">{{ progress.daysRemaining }} days to harvest target</span>
     </div>
+
+    <div class="batch-card__actions">
+      <span>{{ batch.blockCount }} blocks in tracker</span>
+      <button type="button" class="move-button" @click="emit('move-to-fruiting', batch)">
+        Move to fruiting
+      </button>
+    </div>
   </article>
 </template>
 
@@ -65,6 +73,14 @@ const progressWidth = computed(() => `${props.progress.percent}%`)
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+}
+
+.batch-card__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  color: #44403c;
 }
 
 h3,
@@ -114,9 +130,21 @@ p,
   font-size: 0.95rem;
 }
 
+.move-button {
+  border: none;
+  border-radius: 999px;
+  padding: 0.55rem 0.95rem;
+  font: inherit;
+  font-weight: 700;
+  color: white;
+  background: #4d7c0f;
+  cursor: pointer;
+}
+
 @media (max-width: 640px) {
   .batch-card__header,
-  .batch-card__meta {
+  .batch-card__meta,
+  .batch-card__actions {
     align-items: flex-start;
     flex-direction: column;
   }

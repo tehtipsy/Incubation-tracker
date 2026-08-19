@@ -6,8 +6,8 @@ const mockStrains = [
     incubationDays: 5,
     harvestDays: 18,
     batches: [
-      { id: 'lm-1', label: "Lion's Mane Batch 1", startDate: '2026-08-16' },
-      { id: 'lm-2', label: "Lion's Mane Batch 2", startDate: '2026-08-02' }
+      { id: 'lm-1', label: "Lion's Mane Batch 1", startDate: '2026-08-16', blockCount: 6 },
+      { id: 'lm-2', label: "Lion's Mane Batch 2", startDate: '2026-08-02', blockCount: 4 }
     ]
   },
   {
@@ -16,7 +16,7 @@ const mockStrains = [
     description: 'Fast-growing shelves with a shorter incubation window.',
     incubationDays: 4,
     harvestDays: 14,
-    batches: [{ id: 'bo-1', label: 'Blue Oyster Batch 1', startDate: '2026-08-10' }]
+    batches: [{ id: 'bo-1', label: 'Blue Oyster Batch 1', startDate: '2026-08-10', blockCount: 5 }]
   },
   {
     id: 'shiitake',
@@ -24,7 +24,7 @@ const mockStrains = [
     description: 'Wood-loving strain with a longer timeline before harvest color-up.',
     incubationDays: 6,
     harvestDays: 24,
-    batches: [{ id: 'sh-1', label: 'Shiitake Batch 1', startDate: '2026-07-28' }]
+    batches: [{ id: 'sh-1', label: 'Shiitake Batch 1', startDate: '2026-07-28', blockCount: 3 }]
   }
 ]
 
@@ -75,11 +75,49 @@ const getNextBatchNumber = (strain) => {
 const createBatchId = (strainId) =>
   globalThis.crypto?.randomUUID?.() ?? `${strainId}-${Date.now()}`
 
-export const createBatch = (strain, now = new Date(), label = '') => ({
-  id: createBatchId(strain.id),
-  label: label.trim() || `${strain.name} Batch ${getNextBatchNumber(strain)}`,
-  startDate: toDateString(now)
-})
+const toPositiveInteger = (value) => {
+  const count = Number.parseInt(`${value}`, 10)
+
+  if (!Number.isInteger(count) || count <= 0) {
+    return null
+  }
+
+  return count
+}
+
+export const createBatch = (strain, now = new Date(), blockCount, label = '') => {
+  const normalizedBlockCount = toPositiveInteger(blockCount)
+
+  if (!normalizedBlockCount) {
+    throw new Error('Block count must be a positive integer')
+  }
+
+  return {
+    id: createBatchId(strain.id),
+    label: label.trim() || `${strain.name} Batch ${getNextBatchNumber(strain)}`,
+    startDate: toDateString(now),
+    blockCount: normalizedBlockCount
+  }
+}
+
+export const moveBlocksToFruiting = (batch, blocksToMove) => {
+  const normalizedBlocksToMove = toPositiveInteger(blocksToMove)
+
+  if (!normalizedBlocksToMove || normalizedBlocksToMove > batch.blockCount) {
+    return undefined
+  }
+
+  const remainingBlocks = batch.blockCount - normalizedBlocksToMove
+
+  if (remainingBlocks === 0) {
+    return null
+  }
+
+  return {
+    ...batch,
+    blockCount: remainingBlocks
+  }
+}
 
 export const getProgress = (batch, strain, now = new Date()) => {
   const daysElapsed = diffInDays(batch.startDate, now)
