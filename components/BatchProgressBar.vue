@@ -25,7 +25,14 @@ const progressWidth = computed(() => `${props.progress.percent}%`)
       </strong>
     </div>
 
-    <div class="progress-track" aria-hidden="true">
+    <div
+      class="progress-track"
+      role="progressbar"
+      :aria-label="`${batch.label} progress`"
+      :aria-valuenow="progress.percent"
+      aria-valuemin="0"
+      aria-valuemax="100"
+    >
       <div
         class="progress-track__fill"
         :class="`progress-track__fill--${progress.stage}`"
@@ -37,7 +44,7 @@ const progressWidth = computed(() => `${props.progress.percent}%`)
       <span v-if="progress.stage === 'harvest'">Ready to harvest</span>
       <span v-else-if="progress.stage === 'incubating'">Early incubation</span>
       <span v-else>Colonizing</span>
-      <span>{{ progress.daysRemaining }} days to harvest target</span>
+      <span v-if="progress.stage !== 'harvest'">{{ progress.daysRemaining }} days to harvest target</span>
     </div>
   </article>
 </template>

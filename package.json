@@ -1,5 +1,5 @@
 {
-  "name": "Incubation-tracker",
+  "name": "incubation-tracker",
   "type": "module",
   "private": true,
   "packageManager": "pnpm@11.22.0",

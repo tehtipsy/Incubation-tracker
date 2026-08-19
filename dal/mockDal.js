@@ -32,6 +32,8 @@ const clone = (value) => JSON.parse(JSON.stringify(value))
 
 export const getMockStrains = () => clone(mockStrains)
 
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
 const toDateString = (value) => {
   const year = value.getFullYear()
   const month = `${value.getMonth() + 1}`.padStart(2, '0')
@@ -48,9 +50,28 @@ const diffInDays = (startDate, endDate) => {
   return Math.max(0, Math.floor(difference / 86400000))
 }
 
+const getNextBatchNumber = (strain) => {
+  const labelPattern = new RegExp(`^${escapeRegExp(strain.name)} Batch (\\d+)$`)
+
+  return (
+    strain.batches.reduce((highestBatchNumber, batch) => {
+      const match = batch.label.match(labelPattern)
+
+      if (!match) {
+        return highestBatchNumber
+      }
+
+      return Math.max(highestBatchNumber, Number(match[1]))
+    }, 0) + 1
+  )
+}
+
+const createBatchId = (strainId) =>
+  globalThis.crypto?.randomUUID?.() ?? `${strainId}-${Date.now()}`
+
 export const createBatch = (strain, now = new Date(), label = '') => ({
-  id: `${strain.id}-${Date.now()}`,
-  label: label.trim() || `${strain.name} Batch ${strain.batches.length + 1}`,
+  id: createBatchId(strain.id),
+  label: label.trim() || `${strain.name} Batch ${getNextBatchNumber(strain)}`,
   startDate: toDateString(now)
 })
 

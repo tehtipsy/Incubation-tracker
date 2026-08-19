@@ -28,7 +28,13 @@ test('creating a batch uses the provided label or a generated fallback', () => {
 
   const namedBatch = createBatch(strain, new Date('2026-08-19'), 'Tray 7')
   const fallbackBatch = createBatch(strain, new Date('2026-08-19'), '')
+  const nextFallbackBatch = createBatch(
+    { ...strain, batches: [...strain.batches, fallbackBatch] },
+    new Date('2026-08-19'),
+    ''
+  )
 
   assert.equal(namedBatch.label, 'Tray 7')
-  assert.match(fallbackBatch.label, /^Lion's Mane Batch \d+$/)
+  assert.equal(fallbackBatch.label, "Lion's Mane Batch 3")
+  assert.equal(nextFallbackBatch.label, "Lion's Mane Batch 4")
 })

@@ -6,14 +6,19 @@ export const useStrainTracker = () => {
   const getStrainById = (id) => strains.value.find((strain) => strain.id === id)
 
   const addBatchToStrain = (strainId, label) => {
-    const strain = getStrainById(strainId)
+    const strainIndex = strains.value.findIndex((strain) => strain.id === strainId)
 
-    if (!strain) {
+    if (strainIndex === -1) {
       return null
     }
 
+    const strain = strains.value[strainIndex]
     const batch = createBatch(strain, new Date(), label)
-    strain.batches = [batch, ...strain.batches]
+    strains.value = strains.value.map((currentStrain, index) =>
+      index === strainIndex
+        ? { ...currentStrain, batches: [batch, ...currentStrain.batches] }
+        : currentStrain
+    )
 
     return batch
   }
