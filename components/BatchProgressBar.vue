@@ -95,19 +95,19 @@ p,
 .progress-track__fill--incubating,
 .status--incubating {
   background: #dc2626;
-  color: #dc2626;
+  color: #ffffff;
 }
 
 .progress-track__fill--colonizing,
 .status--colonizing {
   background: #d97706;
-  color: #d97706;
+  color: #ffffff;
 }
 
 .progress-track__fill--harvest,
 .status--harvest {
   background: #16a34a;
-  color: #16a34a;
+  color: #ffffff;
 }
 
 .status {
