@@ -2,7 +2,7 @@
 const route = useRoute()
 const draftBlockCount = ref('')
 const draftBatchCount = ref(1)
-const { getStrainById, addBatchesToStrain, moveBatchBlocksToFruiting, getProgress } = useStrainTracker()
+const { getStrainById, addBatchesToStrain, moveBatchBlocksToFruiting, moveFruitingBatchToHarvest, getProgress, getFruitingProgress } = useStrainTracker()
 
 const strain = computed(() => getStrainById(route.params.id))
 
@@ -49,6 +49,35 @@ const moveToFruiting = (batch) => {
   }
 
   moveBatchBlocksToFruiting(strain.value.id, batch.id, blocksToMove)
+}
+
+const moveToHarvest = (batch) => {
+  if (!strain.value || !import.meta.client) {
+    return
+  }
+
+  const promptValue = window.prompt(
+    `How many blocks should be moved to harvest from ${batch.label}?`,
+    `${batch.blockCount}`
+  )
+
+  if (promptValue === null) {
+    return
+  }
+
+  const blocksToMove = Number.parseInt(promptValue, 10)
+
+  if (!Number.isInteger(blocksToMove) || blocksToMove <= 0) {
+    window.alert('Enter a positive whole number.')
+    return
+  }
+
+  if (blocksToMove > batch.blockCount) {
+    window.alert(`Only ${batch.blockCount} blocks remain in this batch.`)
+    return
+  }
+
+  moveFruitingBatchToHarvest(strain.value.id, batch.id, blocksToMove)
 }
 </script>
 
@@ -105,6 +134,20 @@ const moveToFruiting = (batch) => {
           @move-to-fruiting="moveToFruiting"
         />
       </section>
+
+      <template v-if="strain.fruitingBatches.length > 0">
+        <h2 class="section-heading">Fruiting</h2>
+        <section class="batch-list" aria-label="Fruiting batches">
+          <BatchProgressBar
+            v-for="batch in strain.fruitingBatches"
+            :key="batch.id"
+            :batch="batch"
+            :progress="getFruitingProgress(batch, strain)"
+            :is-fruiting="true"
+            @move-to-harvest="moveToHarvest"
+          />
+        </section>
+      </template>
     </section>
 
     <section v-else class="empty-state">
@@ -214,6 +257,15 @@ h1 {
 .batch-list {
   display: grid;
   gap: 1rem;
+}
+
+.section-heading {
+  margin: 1.5rem 0 0.75rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #0891b2;
 }
 
 @media (max-width: 720px) {

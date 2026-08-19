@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { createBatch, getMockStrains, getProgress, moveBlocksToFruiting } from '../dal/mockDal.js'
+import { addBlocksToFruitingBatch, createBatch, getFruitingProgress, getMockStrains, getProgress, moveBlocksToFruiting } from '../dal/mockDal.js'
 
 test('mock DAL returns strains with tracked batches', () => {
   const strains = getMockStrains()
@@ -65,4 +65,40 @@ test('creating a batch requires a positive block count', () => {
   assert.throws(() => createBatch(strain, new Date('2026-08-19'), 0))
   assert.throws(() => createBatch(strain, new Date('2026-08-19'), -2))
   assert.throws(() => createBatch(strain, new Date('2026-08-19'), ''))
+})
+
+test('adding blocks to fruiting batches groups by date', () => {
+  const [strain] = getMockStrains()
+  const now = new Date('2026-08-19')
+
+  const firstMove = addBlocksToFruitingBatch(strain, 3, now)
+  assert.equal(firstMove.length, 1)
+  assert.equal(firstMove[0].blockCount, 3)
+  assert.equal(firstMove[0].startDate, '2026-08-19')
+  assert.equal(firstMove[0].label, 'Fruiting 2026-08-19')
+
+  const secondMove = addBlocksToFruitingBatch({ ...strain, fruitingBatches: firstMove }, 2, now)
+  assert.equal(secondMove.length, 1)
+  assert.equal(secondMove[0].blockCount, 5)
+
+  const nextDay = new Date('2026-08-20')
+  const newDay = addBlocksToFruitingBatch({ ...strain, fruitingBatches: firstMove }, 4, nextDay)
+  assert.equal(newDay.length, 2)
+  assert.equal(newDay[0].startDate, '2026-08-20')
+  assert.equal(newDay[1].startDate, '2026-08-19')
+})
+
+test('fruiting progress uses fruitingDays and reports fruiting or harvest stage', () => {
+  const [strain] = getMockStrains()
+  const fruitingBatch = { id: 'f-1', label: 'Fruiting 2026-08-15', startDate: '2026-08-15', blockCount: 3 }
+
+  const midProgress = getFruitingProgress(fruitingBatch, strain, new Date('2026-08-19'))
+  assert.equal(midProgress.stage, 'fruiting')
+  assert.ok(midProgress.daysRemaining > 0)
+
+  const readyBatch = { id: 'f-2', label: 'Fruiting 2026-08-01', startDate: '2026-08-01', blockCount: 2 }
+  const readyProgress = getFruitingProgress(readyBatch, strain, new Date('2026-08-19'))
+  assert.equal(readyProgress.stage, 'harvest')
+  assert.equal(readyProgress.percent, 100)
+  assert.equal(readyProgress.daysRemaining, 0)
 })
