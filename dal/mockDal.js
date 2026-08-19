@@ -43,7 +43,13 @@ const toDateString = (value) => {
 }
 
 const diffInDays = (startDate, endDate) => {
-  const start = new Date(`${startDate}T00:00:00Z`)
+  const [year, month, day] = startDate.split('-').map(Number)
+
+  if (![year, month, day].every(Number.isFinite)) {
+    return 0
+  }
+
+  const start = new Date(Date.UTC(year, month - 1, day))
   const end = new Date(Date.UTC(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()))
   const difference = end.getTime() - start.getTime()
 
