@@ -1,4 +1,4 @@
-import { createBatch, getMockStrains, getProgress, moveBlocksToFruiting } from '~/dal/mockDal'
+import { addBlocksToFruitingBatch, createBatch, getFruitingProgress, getMockStrains, getProgress, moveBlocksToFruiting, removeFruitingBlocks } from '~/dal/mockDal'
 
 export const useStrainTracker = () => {
   const strains = useState('strain-tracker', () => getMockStrains())
@@ -64,9 +64,52 @@ export const useStrainTracker = () => {
       updatedBatches.splice(batchIndex, 1, updatedBatch)
     }
 
+    const actualBlocksMoved = updatedBatch === null
+      ? batch.blockCount
+      : batch.blockCount - updatedBatch.blockCount
+    const updatedFruitingBatches = addBlocksToFruitingBatch(strain, actualBlocksMoved)
+
     strains.value = strains.value.map((currentStrain, index) =>
       index === strainIndex
-        ? { ...currentStrain, batches: updatedBatches }
+        ? { ...currentStrain, batches: updatedBatches, fruitingBatches: updatedFruitingBatches }
+        : currentStrain
+    )
+
+    return updatedBatch
+  }
+
+  const moveFruitingBatchToHarvest = (strainId, batchId, blocksToMove) => {
+    const strainIndex = strains.value.findIndex((strain) => strain.id === strainId)
+
+    if (strainIndex === -1) {
+      return null
+    }
+
+    const strain = strains.value[strainIndex]
+    const batchIndex = strain.fruitingBatches.findIndex((batch) => batch.id === batchId)
+
+    if (batchIndex === -1) {
+      return null
+    }
+
+    const batch = strain.fruitingBatches[batchIndex]
+    const updatedBatch = removeFruitingBlocks(batch, blocksToMove)
+
+    if (typeof updatedBatch === 'undefined') {
+      return null
+    }
+
+    const updatedFruitingBatches = [...strain.fruitingBatches]
+
+    if (!updatedBatch) {
+      updatedFruitingBatches.splice(batchIndex, 1)
+    } else {
+      updatedFruitingBatches.splice(batchIndex, 1, updatedBatch)
+    }
+
+    strains.value = strains.value.map((currentStrain, index) =>
+      index === strainIndex
+        ? { ...currentStrain, fruitingBatches: updatedFruitingBatches }
         : currentStrain
     )
 
@@ -78,6 +121,8 @@ export const useStrainTracker = () => {
     getStrainById,
     addBatchesToStrain,
     moveBatchBlocksToFruiting,
-    getProgress
+    moveFruitingBatchToHarvest,
+    getProgress,
+    getFruitingProgress
   }
 }

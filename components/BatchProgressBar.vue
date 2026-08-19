@@ -7,10 +7,14 @@ const props = defineProps({
   progress: {
     type: Object,
     required: true
+  },
+  isFruiting: {
+    type: Boolean,
+    default: false
   }
 })
 
-const emit = defineEmits(['move-to-fruiting'])
+const emit = defineEmits(['move-to-fruiting', 'move-to-harvest'])
 const progressWidth = computed(() => `${props.progress.percent}%`)
 </script>
 
@@ -43,15 +47,31 @@ const progressWidth = computed(() => `${props.progress.percent}%`)
 
     <div class="batch-card__meta">
       <span v-if="progress.stage === 'harvest'">Ready to harvest</span>
+      <span v-else-if="progress.stage === 'fruiting'">Fruiting</span>
       <span v-else-if="progress.stage === 'incubating'">Early incubation</span>
       <span v-else>Colonizing</span>
-      <span v-if="progress.stage !== 'harvest'">{{ progress.daysRemaining }} days to harvest target</span>
+      <span v-if="progress.stage !== 'harvest'">
+        {{ progress.daysRemaining }} {{ isFruiting ? 'days remaining in fruiting' : 'days to harvest target' }}
+      </span>
     </div>
 
     <div class="batch-card__actions">
       <span>{{ batch.blockCount }} blocks in tracker</span>
-      <button type="button" class="move-button" @click="emit('move-to-fruiting', batch)">
+      <button
+        v-if="!isFruiting"
+        type="button"
+        class="move-button"
+        @click="emit('move-to-fruiting', batch)"
+      >
         Move to fruiting
+      </button>
+      <button
+        v-else
+        type="button"
+        class="move-button"
+        @click="emit('move-to-harvest', batch)"
+      >
+        Move to harvest
       </button>
     </div>
   </article>
@@ -117,6 +137,12 @@ p,
 .progress-track__fill--colonizing,
 .status--colonizing {
   background: #d97706;
+  color: #ffffff;
+}
+
+.progress-track__fill--fruiting,
+.status--fruiting {
+  background: #0891b2;
   color: #ffffff;
 }
 

@@ -5,10 +5,12 @@ const mockStrains = [
     description: 'Dense white clusters that reward patient incubation before fruiting.',
     incubationDays: 5,
     harvestDays: 18,
+    fruitingDays: 7,
     batches: [
       { id: 'lm-1', label: "Lion's Mane Batch 1", startDate: '2026-08-16', blockCount: 6 },
       { id: 'lm-2', label: "Lion's Mane Batch 2", startDate: '2026-08-02', blockCount: 4 }
-    ]
+    ],
+    fruitingBatches: []
   },
   {
     id: 'blue-oyster',
@@ -16,7 +18,9 @@ const mockStrains = [
     description: 'Fast-growing shelves with a shorter incubation window.',
     incubationDays: 4,
     harvestDays: 14,
-    batches: [{ id: 'bo-1', label: 'Blue Oyster Batch 1', startDate: '2026-08-10', blockCount: 5 }]
+    fruitingDays: 5,
+    batches: [{ id: 'bo-1', label: 'Blue Oyster Batch 1', startDate: '2026-08-10', blockCount: 5 }],
+    fruitingBatches: []
   },
   {
     id: 'shiitake',
@@ -24,7 +28,9 @@ const mockStrains = [
     description: 'Wood-loving strain with a longer timeline before harvest color-up.',
     incubationDays: 6,
     harvestDays: 24,
-    batches: [{ id: 'sh-1', label: 'Shiitake Batch 1', startDate: '2026-07-28', blockCount: 3 }]
+    fruitingDays: 9,
+    batches: [{ id: 'sh-1', label: 'Shiitake Batch 1', startDate: '2026-07-28', blockCount: 3 }],
+    fruitingBatches: []
   }
 ]
 
@@ -119,6 +125,25 @@ export const moveBlocksToFruiting = (batch, blocksToMove) => {
   }
 }
 
+export const removeFruitingBlocks = (batch, blocksToRemove) => {
+  const normalizedBlocksToRemove = toPositiveInteger(blocksToRemove)
+
+  if (!normalizedBlocksToRemove || normalizedBlocksToRemove > batch.blockCount) {
+    return undefined
+  }
+
+  const remainingBlocks = batch.blockCount - normalizedBlocksToRemove
+
+  if (remainingBlocks === 0) {
+    return null
+  }
+
+  return {
+    ...batch,
+    blockCount: remainingBlocks
+  }
+}
+
 export const getProgress = (batch, strain, now = new Date()) => {
   const daysElapsed = diffInDays(batch.startDate, now)
   const percent = Math.min(100, Math.round((daysElapsed / strain.harvestDays) * 100))
@@ -132,6 +157,39 @@ export const getProgress = (batch, strain, now = new Date()) => {
   return {
     daysElapsed,
     daysRemaining: Math.max(strain.harvestDays - daysElapsed, 0),
+    percent,
+    stage
+  }
+}
+
+export const addBlocksToFruitingBatch = (strain, blocksToAdd, now = new Date()) => {
+  const today = toDateString(now)
+  const existing = strain.fruitingBatches.find((b) => b.startDate === today)
+
+  if (existing) {
+    return strain.fruitingBatches.map((b) =>
+      b.startDate === today ? { ...b, blockCount: b.blockCount + blocksToAdd } : b
+    )
+  }
+
+  const newBatch = {
+    id: createBatchId(strain.id),
+    label: `Fruiting ${today}`,
+    startDate: today,
+    blockCount: blocksToAdd
+  }
+
+  return [newBatch, ...strain.fruitingBatches]
+}
+
+export const getFruitingProgress = (batch, strain, now = new Date()) => {
+  const daysElapsed = diffInDays(batch.startDate, now)
+  const percent = Math.min(100, Math.round((daysElapsed / strain.fruitingDays) * 100))
+  const stage = daysElapsed >= strain.fruitingDays ? 'harvest' : 'fruiting'
+
+  return {
+    daysElapsed,
+    daysRemaining: Math.max(strain.fruitingDays - daysElapsed, 0),
     percent,
     stage
   }
